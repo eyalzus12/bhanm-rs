@@ -1,16 +1,17 @@
 use super::AnmReadingError;
 use std::{f32, io::Read};
 
+#[derive(Clone)]
 pub struct AnmBone {
-    id: i16,
-    scale_x: f32,
-    rotate_skew0: f32,
-    rotate_skew1: f32,
-    scale_y: f32,
-    x: f32,
-    y: f32,
-    opacity: f64,
-    frame: i8,
+    pub id: i16,
+    pub scale_x: f32,
+    pub rotate_skew0: f32,
+    pub rotate_skew1: f32,
+    pub scale_y: f32,
+    pub x: f32,
+    pub y: f32,
+    pub opacity: f64,
+    pub frame: i8,
 }
 
 impl AnmBone {
@@ -31,16 +32,13 @@ impl AnmBone {
         let rotate_skew1;
         let scale_y;
         if copy_transform {
-            match prev_bone {
-                None => {
-                    return Err(AnmReadingError::NoPrevTransformError().into());
-                }
-                Some(prev) => {
-                    scale_x = prev.scale_x;
-                    rotate_skew0 = prev.rotate_skew0;
-                    rotate_skew1 = prev.rotate_skew1;
-                    scale_y = prev.scale_y;
-                }
+            if let Some(prev) = prev_bone {
+                scale_x = prev.scale_x;
+                rotate_skew0 = prev.rotate_skew0;
+                rotate_skew1 = prev.rotate_skew1;
+                scale_y = prev.scale_y;
+            } else {
+                return Err(AnmReadingError::NoPrevBoneTransformError().into());
             }
         } else {
             let mut identity = false;
@@ -81,14 +79,11 @@ impl AnmBone {
         reader.read_exact(&mut buf[..1])?;
         let copy_position = buf[0] != 0;
         if copy_position {
-            match prev_bone {
-                None => {
-                    return Err(AnmReadingError::NoPrevPositionError().into());
-                }
-                Some(prev) => {
-                    x = prev.x;
-                    y = prev.y;
-                }
+            if let Some(prev) = prev_bone {
+                x = prev.x;
+                y = prev.y;
+            } else {
+                return Err(AnmReadingError::NoPrevBonePositionError().into());
             }
         } else {
             reader.read_exact(&mut buf)?;
