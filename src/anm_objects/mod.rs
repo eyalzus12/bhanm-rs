@@ -1,9 +1,12 @@
+use std::string::FromUtf8Error;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum AnmReadingError {
     #[error(transparent)]
     IOError(#[from] std::io::Error),
+    #[error(transparent)]
+    FromUtf8Error(#[from] FromUtf8Error),
     #[error("A bone tries to copy transform from a previous bone, but there is no previous bone")]
     NoPrevBoneTransformError(),
     #[error("A bone tries to copy position from a previous bone, but there is no previous bone")]
