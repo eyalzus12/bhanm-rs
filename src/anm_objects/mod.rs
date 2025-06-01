@@ -31,3 +31,5 @@ mod anm_animation;
 pub use anm_animation::AnmAnimation;
 mod anm_class;
 pub use anm_class::AnmClass;
+mod anm_file;
+pub use anm_file::AnmFile;

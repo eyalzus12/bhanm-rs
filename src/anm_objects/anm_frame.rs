@@ -12,7 +12,7 @@ pub struct AnmFrame {
 }
 
 impl AnmFrame {
-    pub(super) fn new<R: Read>(
+    pub(super) fn read<R: Read>(
         mut reader: R,
         prev_frame: Option<&Self>,
     ) -> Result<Self, AnmReadingError> {
@@ -68,7 +68,7 @@ impl AnmFrame {
                 }
             } else {
                 let prev_bone = if i > 0 { Some(&bones[i - 1]) } else { None };
-                bones.push(AnmBone::new(&mut reader, prev_bone)?);
+                bones.push(AnmBone::read(&mut reader, prev_bone)?);
             }
         }
 

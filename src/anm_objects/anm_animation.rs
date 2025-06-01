@@ -15,7 +15,7 @@ pub struct AnmAnimation {
 }
 
 impl AnmAnimation {
-    pub(super) fn new<R: Read>(mut reader: R) -> Result<Self, AnmReadingError> {
+    pub(super) fn read<R: Read>(mut reader: R) -> Result<Self, AnmReadingError> {
         let name_length = reader.read_u16::<LE>()? as usize;
         let mut name_buf = Vec::with_capacity(name_length);
         reader.read_exact(&mut name_buf)?;
@@ -44,7 +44,7 @@ impl AnmAnimation {
         let mut frames = Vec::with_capacity(frame_count);
         for i in 0..frame_count {
             let prev_frame = if i == 0 { None } else { Some(&frames[i - 1]) };
-            frames.push(AnmFrame::new(&mut reader, prev_frame)?);
+            frames.push(AnmFrame::read(&mut reader, prev_frame)?);
         }
 
         Ok(Self {

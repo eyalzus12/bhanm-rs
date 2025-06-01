@@ -16,7 +16,7 @@ pub struct AnmBone {
 }
 
 impl AnmBone {
-    pub(super) fn new<R: Read>(
+    pub(super) fn read<R: Read>(
         mut reader: R,
         prev_bone: Option<&Self>,
     ) -> Result<Self, AnmReadingError> {

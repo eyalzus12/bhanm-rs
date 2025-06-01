@@ -9,7 +9,7 @@ pub struct AnmClass {
 }
 
 impl AnmClass {
-    pub(super) fn new<R: Read>(mut reader: R) -> Result<Self, AnmReadingError> {
+    pub(super) fn read<R: Read>(mut reader: R) -> Result<Self, AnmReadingError> {
         let index_length = reader.read_u16::<LE>()? as usize;
         let mut index_buf = Vec::with_capacity(index_length);
         reader.read_exact(&mut index_buf)?;
@@ -23,7 +23,7 @@ impl AnmClass {
         let animation_count = reader.read_u32::<LE>()? as usize;
         let mut animations = AnimationCollection::with_capacity(animation_count);
         for _ in 0..animation_count {
-            let animation = AnmAnimation::new(&mut reader)?;
+            let animation = AnmAnimation::read(&mut reader)?;
             animations.insert(animation);
         }
 
@@ -58,5 +58,9 @@ impl AnimationCollection {
 
     pub fn get(&self, name: &str) -> Option<&AnmAnimation> {
         self.animations.get(name)
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &AnmAnimation> {
+        self.animations.values()
     }
 }
