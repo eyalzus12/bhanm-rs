@@ -1,5 +1,9 @@
 use thiserror::Error;
 
+trait ByteSized {
+    fn get_byte_size(&self, prev: Option<&Self>) -> usize;
+}
+
 #[derive(Error, Debug)]
 pub enum AnmReadingError {
     #[error(transparent)]
@@ -24,3 +28,5 @@ mod anm_bone;
 pub use anm_bone::AnmBone;
 mod anm_frame;
 pub use anm_frame::AnmFrame;
+mod anm_animation;
+pub use anm_animation::AnmAnimation;

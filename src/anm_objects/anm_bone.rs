@@ -1,4 +1,4 @@
-use super::AnmReadingError;
+use super::{AnmReadingError, ByteSized};
 use std::{f32, io::Read};
 
 #[derive(Clone)]
@@ -15,10 +15,7 @@ pub struct AnmBone {
 }
 
 impl AnmBone {
-    pub fn new<R: Read>(
-        mut reader: R,
-        prev_bone: Option<&AnmBone>,
-    ) -> Result<Self, AnmReadingError> {
+    pub fn new<R: Read>(mut reader: R, prev_bone: Option<&Self>) -> Result<Self, AnmReadingError> {
         let mut buf = [0u8; 4];
         reader.read_exact(&mut buf[..2])?;
         let id = i16::from_le_bytes(*buf.first_chunk().unwrap());
@@ -118,5 +115,79 @@ impl AnmBone {
             opacity,
             frame,
         })
+    }
+
+    fn has_same_transform_as(&self, other: &Self) -> bool {
+        self.scale_x == other.scale_x
+            && self.rotate_skew0 == other.rotate_skew0
+            && self.rotate_skew1 == other.rotate_skew1
+            && self.scale_y == other.scale_y
+    }
+
+    fn has_same_position_as(&self, other: &Self) -> bool {
+        self.x == other.x && self.y == other.y
+    }
+
+    fn is_identity(&self) -> bool {
+        self.scale_x == 1.
+            && self.rotate_skew0 == 0.
+            && self.rotate_skew1 == 0.
+            && self.scale_y == 1.
+    }
+
+    fn is_symmetric(&self) -> bool {
+        self.scale_y == -self.scale_x && self.rotate_skew0 == self.rotate_skew1
+    }
+}
+
+impl ByteSized for AnmBone {
+    fn get_byte_size(&self, prev_bone: Option<&Self>) -> usize {
+        let mut result = 0usize;
+        result += size_of::<u16>(); // id
+        result += size_of::<u8>(); // opaque
+
+        result += size_of::<u8>(); // copy transform indicator
+        let copy_transform = match prev_bone {
+            Some(prev) => self.has_same_transform_as(prev),
+            None => false,
+        };
+        // can't copy transform, so have to store more data
+        if !copy_transform {
+            result += size_of::<u8>(); // identity/symmetric indicator
+            if self.is_identity() {
+                result += size_of::<u8>(); // 2nd indicator
+            } else {
+                result += size_of::<f32>(); // scale_x
+                result += size_of::<f32>(); // rotate_skew0
+                if self.is_symmetric() {
+                    result += size_of::<f32>(); // 2nd indicator
+                } else {
+                    result += size_of::<f32>(); // rotate_skew1
+                    result += size_of::<f32>(); // scale_y
+                }
+            }
+        }
+
+        result += size_of::<u8>(); // copy position indicator
+        let copy_position = match prev_bone {
+            Some(prev) => self.has_same_position_as(prev),
+            None => false,
+        };
+        // can't copy position, so have to store more data
+        if !copy_position {
+            result += size_of::<f32>(); // x
+            result += size_of::<f32>(); // y
+        }
+
+        result += size_of::<u8>(); // default frame indicator
+        if self.frame != 1 {
+            result += size_of::<i8>(); // frame
+        }
+
+        if self.opacity != 1. {
+            result += size_of::<u8>(); // opacity
+        }
+
+        return result;
     }
 }

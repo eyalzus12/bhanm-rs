@@ -11,10 +11,7 @@ pub struct AnmFrame {
 }
 
 impl AnmFrame {
-    pub fn new<R: Read>(
-        mut reader: R,
-        prev_frame: Option<&AnmFrame>,
-    ) -> Result<Self, AnmReadingError> {
+    pub fn new<R: Read>(mut reader: R, prev_frame: Option<&Self>) -> Result<Self, AnmReadingError> {
         let mut buf = [0u8; 8];
         reader.read_exact(&mut buf[..2])?;
         let id = i16::from_le_bytes(*buf.first_chunk().unwrap());
