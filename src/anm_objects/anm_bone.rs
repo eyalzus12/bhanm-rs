@@ -117,6 +117,14 @@ impl AnmBone {
         })
     }
 
+    pub(super) fn is_partial_clone_of(&self, other: &Self) -> bool {
+        self.has_same_transform_as(other)
+            && self.has_same_position_as(other)
+            && self.id == other.id
+            && self.frame == other.frame
+            && self.opacity == other.opacity
+    }
+
     fn has_same_transform_as(&self, other: &Self) -> bool {
         self.scale_x == other.scale_x
             && self.rotate_skew0 == other.rotate_skew0

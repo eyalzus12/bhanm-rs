@@ -75,6 +75,8 @@ impl AnmFrame {
                     return Err(AnmReadingError::NoPrevFrameError());
                 }
             } else {
+                let prev_bone = if i > 0 { Some(&bones[i - 1]) } else { None };
+                bones.push(AnmBone::new(&mut reader, prev_bone)?);
             }
         }
 
