@@ -52,8 +52,8 @@ impl AnmFrame {
                         return Err(AnmReadingError::NoPrevFrameBoneError());
                     }
                     let prev_bone = &prev.bones[i];
-                    let change_frame = reader.read_u8()? != 0;
-                    let bone = if change_frame {
+                    let clone_frame = reader.read_u8()? != 0;
+                    let bone = if !clone_frame {
                         let new_frame = reader.read_i8()?;
                         AnmBone {
                             frame: new_frame,

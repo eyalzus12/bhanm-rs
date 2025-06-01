@@ -24,7 +24,7 @@ impl AnmFile {
         let mut classes = ClassesCollection::new();
         while reader.read_u8()? != 0 {
             let key_length = reader.read_u16::<LE>()? as usize;
-            let mut key_buf = Vec::with_capacity(key_length);
+            let mut key_buf = vec![0u8; key_length];
             reader.read_exact(&mut key_buf)?;
             let key = String::from_utf8(key_buf)?;
             let class = AnmClass::read(&mut reader)?;

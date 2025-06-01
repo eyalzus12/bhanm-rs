@@ -17,7 +17,7 @@ pub struct AnmAnimation {
 impl AnmAnimation {
     pub(super) fn read<R: Read>(mut reader: R) -> Result<Self, AnmReadingError> {
         let name_length = reader.read_u16::<LE>()? as usize;
-        let mut name_buf = Vec::with_capacity(name_length);
+        let mut name_buf = vec![0u8; name_length];
         reader.read_exact(&mut name_buf)?;
         let name = String::from_utf8(name_buf)?;
 

@@ -11,12 +11,12 @@ pub struct AnmClass {
 impl AnmClass {
     pub(super) fn read<R: Read>(mut reader: R) -> Result<Self, AnmReadingError> {
         let index_length = reader.read_u16::<LE>()? as usize;
-        let mut index_buf = Vec::with_capacity(index_length);
+        let mut index_buf = vec![0u8; index_length];
         reader.read_exact(&mut index_buf)?;
         let index = String::from_utf8(index_buf)?;
 
         let file_name_length = reader.read_u16::<LE>()? as usize;
-        let mut file_name_buf = Vec::with_capacity(file_name_length);
+        let mut file_name_buf = vec![0u8; file_name_length];
         reader.read_exact(&mut file_name_buf)?;
         let file_name = String::from_utf8(file_name_buf)?;
 
