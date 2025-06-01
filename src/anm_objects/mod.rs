@@ -29,3 +29,5 @@ mod anm_frame;
 pub use anm_frame::AnmFrame;
 mod anm_animation;
 pub use anm_animation::AnmAnimation;
+mod anm_class;
+pub use anm_class::AnmClass;
