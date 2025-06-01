@@ -87,4 +87,69 @@ impl AnmFrame {
             eb_platform_pos,
         });
     }
+
+    pub(super) fn get_byte_size(&self, prev_frame: Option<&Self>) -> usize {
+        let mut result = 0usize;
+        result += size_of::<i16>(); // id
+
+        result += size_of::<u8>(); // fire socket indicator
+        if self.fire_socket.is_some() {
+            result += size_of::<f64>() * 2;
+        }
+        result += size_of::<u8>(); // eb platform indicator
+        if self.eb_platform_pos.is_some() {
+            result += size_of::<f64>() * 2;
+        }
+
+        result += size_of::<i16>(); // bone count
+        for (i, bone) in self.bones.iter().enumerate() {
+            let prev_bone = match prev_frame {
+                Some(prev) => {
+                    if i < prev.bones.len() {
+                        Some(&prev.bones[i])
+                    } else {
+                        None
+                    }
+                }
+                None => None,
+            };
+
+            result += size_of::<u8>(); // prev frame clone indicator
+
+            enum BoneCloneLevel {
+                None,
+                Partial,
+                Full,
+            }
+            let bone_clone_level = match prev_bone {
+                Some(prev_bone) => {
+                    if bone.is_partial_clone_of(&prev_bone) {
+                        if bone.frame == prev_bone.frame {
+                            BoneCloneLevel::Full
+                        } else {
+                            BoneCloneLevel::Partial
+                        }
+                    } else {
+                        BoneCloneLevel::None
+                    }
+                }
+                None => BoneCloneLevel::None,
+            };
+
+            match bone_clone_level {
+                BoneCloneLevel::Full => {
+                    result += size_of::<u8>(); // full copy indicator
+                }
+                BoneCloneLevel::Partial => {
+                    result += size_of::<u8>(); // full copy indicator
+                    result += size_of::<i8>(); // frame override
+                }
+                BoneCloneLevel::None => {
+                    result += bone.get_byte_size(prev_bone);
+                }
+            }
+        }
+
+        return result;
+    }
 }

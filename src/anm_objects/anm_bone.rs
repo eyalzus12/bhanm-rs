@@ -1,4 +1,4 @@
-use super::{AnmReadingError, ByteSized};
+use super::AnmReadingError;
 use std::{f32, io::Read};
 
 #[derive(Clone)]
@@ -146,10 +146,8 @@ impl AnmBone {
     fn is_symmetric(&self) -> bool {
         self.scale_y == -self.scale_x && self.rotate_skew0 == self.rotate_skew1
     }
-}
 
-impl ByteSized for AnmBone {
-    fn get_byte_size(&self, prev_bone: Option<&Self>) -> usize {
+    pub(super) fn get_byte_size(&self, prev_bone: Option<&Self>) -> usize {
         let mut result = 0usize;
         result += size_of::<u16>(); // id
         result += size_of::<u8>(); // opaque
