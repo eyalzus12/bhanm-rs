@@ -1,6 +1,9 @@
-use super::AnmReadingError;
-use byteorder::{LittleEndian as LE, ReadBytesExt};
-use std::{f32, io::Read};
+use super::{AnmReadingError, AnmWritingError};
+use byteorder::{LittleEndian as LE, ReadBytesExt, WriteBytesExt};
+use std::{
+    f32,
+    io::{Read, Write},
+};
 
 #[derive(Clone)]
 pub struct AnmBone {
@@ -103,6 +106,75 @@ impl AnmBone {
             opacity,
             frame,
         })
+    }
+
+    pub(super) fn write<W: Write>(
+        &self,
+        mut writer: W,
+        prev_bone: Option<&Self>,
+    ) -> Result<(), AnmWritingError> {
+        writer.write_i16::<LE>(self.id)?;
+        let opaque = self.opacity == 1.;
+        writer.write_u8(if opaque { 1 } else { 0 })?;
+
+        let copy_transform = if let Some(prev) = prev_bone {
+            self.has_same_transform_as(&prev)
+        } else {
+            false
+        };
+        if copy_transform {
+            writer.write_u8(1)?;
+        } else {
+            writer.write_u8(0)?;
+            let is_identity = self.is_identity();
+            let is_symmetric = self.is_symmetric();
+            if is_identity || is_symmetric {
+                writer.write_u8(1)?;
+                if is_identity {
+                    writer.write_u8(1)?;
+                } else {
+                    writer.write_u8(0)?;
+                }
+            } else {
+                writer.write_u8(0)?;
+            }
+
+            if !is_identity {
+                writer.write_f32::<LE>(self.scale_x)?;
+                writer.write_f32::<LE>(self.rotate_skew0)?;
+                if !is_symmetric {
+                    writer.write_f32::<LE>(self.rotate_skew1)?;
+                    writer.write_f32::<LE>(self.scale_y)?;
+                }
+            }
+        }
+
+        let copy_position = if let Some(prev) = prev_bone {
+            self.has_same_position_as(&prev)
+        } else {
+            false
+        };
+        if copy_position {
+            writer.write_u8(1)?;
+        } else {
+            writer.write_u8(0)?;
+            writer.write_f32::<LE>(self.x)?;
+            writer.write_f32::<LE>(self.y)?;
+        }
+
+        if self.frame == 1 {
+            writer.write_u8(0)?;
+        } else {
+            writer.write_u8(1)?;
+            writer.write_i8(self.frame)?;
+        }
+
+        if !opaque {
+            let opacity_byte = f64::round(self.opacity * 255.) as u8;
+            writer.write_u8(opacity_byte)?;
+        }
+
+        Ok(())
     }
 
     pub(super) fn is_partial_clone_of(&self, other: &Self) -> bool {

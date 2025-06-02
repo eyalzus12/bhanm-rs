@@ -6,7 +6,7 @@ use std::{collections::HashMap, io::Read};
 type ClassesCollection = HashMap<String, AnmClass>;
 
 pub struct AnmFile {
-    header: i32,
+    pub header: i32,
     pub classes: ClassesCollection,
 }
 

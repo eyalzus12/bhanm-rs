@@ -23,6 +23,12 @@ pub enum AnmReadingError {
     NegativeBoneCountError { bone_count: i16 },
 }
 
+#[derive(Error, Debug)]
+pub enum AnmWritingError {
+    #[error(transparent)]
+    IOError(#[from] std::io::Error),
+}
+
 mod anm_bone;
 pub use anm_bone::AnmBone;
 mod anm_frame;
