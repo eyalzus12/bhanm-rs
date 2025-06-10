@@ -83,7 +83,7 @@ impl AnmAnimation {
             Err(_) => return Err(AnmWritingError::AnimationDataTooLargeError { byte_count }),
         };
 
-        writer.write_i16::<LE>(name_length)?;
+        writer.write_u16::<LE>(name_length)?;
         writer.write_all(self.name.as_bytes())?;
 
         writer.write_u32::<LE>(frame_count)?;
