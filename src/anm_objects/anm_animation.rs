@@ -42,7 +42,7 @@ impl AnmAnimation {
 
         let mut frames = Vec::with_capacity(frame_count);
         for i in 0..frame_count {
-            let prev_frame = if i == 0 { None } else { Some(&frames[i - 1]) };
+            let prev_frame = frames.get(i - 1);
             frames.push(AnmFrame::read(&mut reader, prev_frame)?);
         }
 
