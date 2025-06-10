@@ -37,6 +37,12 @@ pub enum AnmWritingError {
     DataArrayTooLongError { data_length: usize },
     #[error("Animation byte count exceeds u32 max: ({byte_count:?})")]
     AnimationDataTooLargeError { byte_count: usize },
+    #[error("Class index length exceeds u16 max: ({index_length:?})")]
+    TooLongClassIndex { index_length: usize },
+    #[error("Class filename length exceeds u16 max: ({filename_length:?})")]
+    TooLongClassFilename { filename_length: usize },
+    #[error("Animation count exceeds u32 max: ({animation_count:?})")]
+    TooManyAnimationsError { animation_count: usize },
 }
 
 mod anm_bone;

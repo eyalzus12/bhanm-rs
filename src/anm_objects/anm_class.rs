@@ -1,6 +1,8 @@
+use crate::AnmWritingError;
+
 use super::{AnmAnimation, AnmReadingError};
-use byteorder::{LittleEndian as LE, ReadBytesExt};
-use std::{collections::HashMap, io::Read};
+use byteorder::{LittleEndian as LE, ReadBytesExt, WriteBytesExt};
+use std::{collections::HashMap, io::Read, io::Write};
 
 pub struct AnmClass {
     pub index: String,
@@ -33,6 +35,38 @@ impl AnmClass {
             animations,
         })
     }
+
+    pub(super) fn write<W: Write>(&self, mut writer: W) -> Result<(), AnmWritingError> {
+        let index_length = self.index.len();
+        let index_length = match index_length.try_into() {
+            Ok(v) => v,
+            Err(_) => return Err(AnmWritingError::TooLongClassIndex { index_length }),
+        };
+
+        let filename_length = self.file_name.len();
+        let filename_length = match filename_length.try_into() {
+            Ok(v) => v,
+            Err(_) => return Err(AnmWritingError::TooLongClassFilename { filename_length }),
+        };
+
+        let animation_count = self.animations.len();
+        let animation_count = match animation_count.try_into() {
+            Ok(v) => v,
+            Err(_) => return Err(AnmWritingError::TooManyAnimationsError { animation_count }),
+        };
+
+        writer.write_u16::<LE>(index_length)?;
+        writer.write_all(self.index.as_bytes())?;
+        writer.write_u16::<LE>(filename_length)?;
+        writer.write_all(self.file_name.as_bytes())?;
+
+        writer.write_u32::<LE>(animation_count)?;
+        for animation in self.animations.iter() {
+            animation.write(&mut writer)?;
+        }
+
+        Ok(())
+    }
 }
 
 pub struct AnimationCollection {
@@ -50,6 +84,10 @@ impl AnimationCollection {
         Self {
             animations: HashMap::with_capacity(capacity),
         }
+    }
+
+    pub fn len(&self) -> usize {
+        self.animations.len()
     }
 
     pub fn insert(&mut self, animation: AnmAnimation) -> Option<AnmAnimation> {
