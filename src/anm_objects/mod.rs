@@ -27,6 +27,8 @@ pub enum AnmReadingError {
 pub enum AnmWritingError {
     #[error(transparent)]
     IOError(#[from] std::io::Error),
+    #[error("Bone count exceeds i16 max: ({bone_count:?})")]
+    TooManyBonesError { bone_count: usize },
 }
 
 mod anm_bone;

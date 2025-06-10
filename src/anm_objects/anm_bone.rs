@@ -1,9 +1,6 @@
 use super::{AnmReadingError, AnmWritingError};
 use byteorder::{LittleEndian as LE, ReadBytesExt, WriteBytesExt};
-use std::{
-    f32,
-    io::{Read, Write},
-};
+use std::io::{Read, Write};
 
 #[derive(Clone)]
 pub struct AnmBone {
@@ -32,11 +29,11 @@ impl AnmBone {
         let rotate_skew1;
         let scale_y;
         if copy_transform {
-            if let Some(prev) = prev_bone {
-                scale_x = prev.scale_x;
-                rotate_skew0 = prev.rotate_skew0;
-                rotate_skew1 = prev.rotate_skew1;
-                scale_y = prev.scale_y;
+            if let Some(prev_bone) = prev_bone {
+                scale_x = prev_bone.scale_x;
+                rotate_skew0 = prev_bone.rotate_skew0;
+                rotate_skew1 = prev_bone.rotate_skew1;
+                scale_y = prev_bone.scale_y;
             } else {
                 return Err(AnmReadingError::NoPrevBoneTransformError().into());
             }
@@ -72,9 +69,9 @@ impl AnmBone {
         let y;
         let copy_position = reader.read_u8()? != 0;
         if copy_position {
-            if let Some(prev) = prev_bone {
-                x = prev.x;
-                y = prev.y;
+            if let Some(prev_bone) = prev_bone {
+                x = prev_bone.x;
+                y = prev_bone.y;
             } else {
                 return Err(AnmReadingError::NoPrevBonePositionError().into());
             }
@@ -117,8 +114,8 @@ impl AnmBone {
         let opaque = self.opacity == 1.;
         writer.write_u8(if opaque { 1 } else { 0 })?;
 
-        let copy_transform = if let Some(prev) = prev_bone {
-            self.has_same_transform_as(&prev)
+        let copy_transform = if let Some(prev_bone) = prev_bone {
+            self.has_same_transform_as(&prev_bone)
         } else {
             false
         };
@@ -149,8 +146,8 @@ impl AnmBone {
             }
         }
 
-        let copy_position = if let Some(prev) = prev_bone {
-            self.has_same_position_as(&prev)
+        let copy_position = if let Some(prev_bone) = prev_bone {
+            self.has_same_position_as(&prev_bone)
         } else {
             false
         };

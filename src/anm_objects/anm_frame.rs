@@ -1,6 +1,6 @@
-use super::{AnmBone, AnmReadingError};
-use byteorder::{LittleEndian as LE, ReadBytesExt};
-use std::io::Read;
+use super::{AnmBone, AnmReadingError, AnmWritingError};
+use byteorder::{LittleEndian as LE, ReadBytesExt, WriteBytesExt};
+use std::io::{Read, Write};
 
 pub struct AnmFrame {
     pub id: i16,
@@ -36,22 +36,20 @@ impl AnmFrame {
             None
         };
 
-        let _bone_count = reader.read_i16::<LE>()?;
-        if _bone_count < 0 {
-            return Err(AnmReadingError::NegativeBoneCountError {
-                bone_count: _bone_count,
-            });
+        let bone_count = reader.read_i16::<LE>()?;
+        if bone_count < 0 {
+            return Err(AnmReadingError::NegativeBoneCountError { bone_count });
         }
-        let bone_count = _bone_count as usize;
+        let bone_count = bone_count as usize;
         let mut bones: Vec<AnmBone> = Vec::with_capacity(bone_count);
         for i in 0..bone_count {
             let clone_prev = reader.read_u8()? != 0;
             if clone_prev {
-                if let Some(prev) = prev_frame {
-                    if i >= prev.bones.len() {
+                if let Some(prev_frame) = prev_frame {
+                    if i >= prev_frame.bones.len() {
                         return Err(AnmReadingError::NoPrevFrameBoneError());
                     }
-                    let prev_bone = &prev.bones[i];
+                    let prev_bone = &prev_frame.bones[i];
                     let clone_frame = reader.read_u8()? != 0;
                     let bone = if !clone_frame {
                         let new_frame = reader.read_i8()?;
@@ -78,6 +76,66 @@ impl AnmFrame {
             fire_socket,
             eb_platform_pos,
         });
+    }
+
+    pub(super) fn write<W: Write>(
+        &self,
+        mut writer: W,
+        prev_frame: Option<&Self>,
+    ) -> Result<(), AnmWritingError> {
+        writer.write_i16::<LE>(self.id)?;
+
+        if let Some(fire_socket) = self.fire_socket {
+            writer.write_u8(1u8)?;
+            writer.write_f64::<LE>(fire_socket.0)?;
+            writer.write_f64::<LE>(fire_socket.1)?;
+        } else {
+            writer.write_u8(0u8)?;
+        }
+
+        if let Some(eb_platform_pos) = self.eb_platform_pos {
+            writer.write_u8(1u8)?;
+            writer.write_f64::<LE>(eb_platform_pos.0)?;
+            writer.write_f64::<LE>(eb_platform_pos.1)?;
+        } else {
+            writer.write_u8(0u8)?;
+        }
+
+        let bone_count = self.bones.len();
+        let bone_count = match self.bones.len().try_into() {
+            Ok(v) => v,
+            Err(_) => {
+                return Err(AnmWritingError::TooManyBonesError { bone_count });
+            }
+        };
+        writer.write_i16::<LE>(bone_count)?;
+
+        for (i, bone) in self.bones.iter().enumerate() {
+            let prev_bone = prev_frame.and_then(|f| f.bones.get(i));
+
+            let cloned_prev_bone = prev_bone.and_then(|b| {
+                if bone.is_partial_clone_of(b) {
+                    Some(b)
+                } else {
+                    None
+                }
+            });
+
+            if let Some(cloned_prev_bone) = cloned_prev_bone {
+                writer.write_u8(1u8)?;
+                if bone.frame == cloned_prev_bone.frame {
+                    writer.write_u8(1u8)?;
+                } else {
+                    writer.write_u8(0u8)?;
+                    writer.write_i8(bone.frame)?;
+                }
+            } else {
+                writer.write_u8(0u8)?;
+                bone.write(&mut writer, prev_bone)?;
+            }
+        }
+
+        Ok(())
     }
 
     pub(super) fn get_byte_size(&self, prev_frame: Option<&Self>) -> usize {
