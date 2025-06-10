@@ -65,7 +65,7 @@ impl AnmFrame {
                     return Err(AnmReadingError::NoPrevFrameError());
                 }
             } else {
-                let prev_bone = bones.get(i - 1);
+                let prev_bone = bones.last();
                 bones.push(AnmBone::read(&mut reader, prev_bone)?);
             }
         }
@@ -152,7 +152,7 @@ impl AnmFrame {
 
         result += size_of::<i16>(); // bone count
         for (i, bone) in self.bones.iter().enumerate() {
-            let prev_bone = prev_frame.and_then(|prev_frame| prev_frame.bones.get(i));
+            let prev_bone = prev_frame.and_then(|f| f.bones.get(i));
 
             result += size_of::<u8>(); // prev frame clone indicator
 

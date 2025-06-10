@@ -41,8 +41,8 @@ impl AnmAnimation {
         _ = reader.read_u32::<LE>()?;
 
         let mut frames = Vec::with_capacity(frame_count);
-        for i in 0..frame_count {
-            let prev_frame = frames.get(i - 1);
+        for _ in 0..frame_count {
+            let prev_frame = frames.last();
             frames.push(AnmFrame::read(&mut reader, prev_frame)?);
         }
 
@@ -98,7 +98,12 @@ impl AnmAnimation {
         }
         writer.write_u32::<LE>(byte_count)?;
         for (i, frame) in self.frames.iter().enumerate() {
-            frame.write(&mut writer, self.frames.get(i - 1))?;
+            let prev_frame = if i == 0 {
+                None
+            } else {
+                Some(&self.frames[i - 1])
+            };
+            frame.write(&mut writer, prev_frame)?;
         }
 
         Ok(())
@@ -107,7 +112,12 @@ impl AnmAnimation {
     fn get_frames_byte_size(&self) -> usize {
         let mut result = 0usize;
         for (i, frame) in self.frames.iter().enumerate() {
-            result += frame.get_byte_size(self.frames.get(i - 1));
+            let prev_frame = if i == 0 {
+                None
+            } else {
+                Some(&self.frames[i - 1])
+            };
+            result += frame.get_byte_size(prev_frame);
         }
         return result;
     }
