@@ -83,31 +83,30 @@ impl AnmFrame {
         mut writer: W,
         prev_frame: Option<&Self>,
     ) -> Result<(), AnmWritingError> {
-        writer.write_i16::<LE>(self.id)?;
-
-        if let Some(fire_socket) = self.fire_socket {
-            writer.write_u8(1u8)?;
-            writer.write_f64::<LE>(fire_socket.0)?;
-            writer.write_f64::<LE>(fire_socket.1)?;
-        } else {
-            writer.write_u8(0u8)?;
-        }
-
-        if let Some(eb_platform_pos) = self.eb_platform_pos {
-            writer.write_u8(1u8)?;
-            writer.write_f64::<LE>(eb_platform_pos.0)?;
-            writer.write_f64::<LE>(eb_platform_pos.1)?;
-        } else {
-            writer.write_u8(0u8)?;
-        }
-
         let bone_count = self.bones.len();
         let bone_count = match self.bones.len().try_into() {
             Ok(v) => v,
-            Err(_) => {
-                return Err(AnmWritingError::TooManyBonesError { bone_count });
-            }
+            Err(_) => return Err(AnmWritingError::TooManyBonesError { bone_count }),
         };
+
+        writer.write_i16::<LE>(self.id)?;
+
+        if let Some(fire_socket) = self.fire_socket {
+            writer.write_u8(1)?;
+            writer.write_f64::<LE>(fire_socket.0)?;
+            writer.write_f64::<LE>(fire_socket.1)?;
+        } else {
+            writer.write_u8(0)?;
+        }
+
+        if let Some(eb_platform_pos) = self.eb_platform_pos {
+            writer.write_u8(1)?;
+            writer.write_f64::<LE>(eb_platform_pos.0)?;
+            writer.write_f64::<LE>(eb_platform_pos.1)?;
+        } else {
+            writer.write_u8(0)?;
+        }
+
         writer.write_i16::<LE>(bone_count)?;
 
         for (i, bone) in self.bones.iter().enumerate() {
@@ -122,15 +121,15 @@ impl AnmFrame {
             });
 
             if let Some(cloned_prev_bone) = cloned_prev_bone {
-                writer.write_u8(1u8)?;
+                writer.write_u8(1)?;
                 if bone.frame == cloned_prev_bone.frame {
-                    writer.write_u8(1u8)?;
+                    writer.write_u8(1)?;
                 } else {
-                    writer.write_u8(0u8)?;
+                    writer.write_u8(0)?;
                     writer.write_i8(bone.frame)?;
                 }
             } else {
-                writer.write_u8(0u8)?;
+                writer.write_u8(0)?;
                 bone.write(&mut writer, prev_bone)?;
             }
         }
@@ -153,16 +152,7 @@ impl AnmFrame {
 
         result += size_of::<i16>(); // bone count
         for (i, bone) in self.bones.iter().enumerate() {
-            let prev_bone = match prev_frame {
-                Some(prev) => {
-                    if i < prev.bones.len() {
-                        Some(&prev.bones[i])
-                    } else {
-                        None
-                    }
-                }
-                None => None,
-            };
+            let prev_bone = prev_frame.and_then(|prev_frame| prev_frame.bones.get(i));
 
             result += size_of::<u8>(); // prev frame clone indicator
 

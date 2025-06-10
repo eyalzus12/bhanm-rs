@@ -29,6 +29,14 @@ pub enum AnmWritingError {
     IOError(#[from] std::io::Error),
     #[error("Bone count exceeds i16 max: ({bone_count:?})")]
     TooManyBonesError { bone_count: usize },
+    #[error("Animation name length exceeds i16 max: ({name_length:?})")]
+    LongAnimNameError { name_length: usize },
+    #[error("Frame count exceeds u32 max: ({frame_count:?})")]
+    TooManyFramesError { frame_count: usize },
+    #[error("Animation data array length exceeds u32 max: ({data_length:?})")]
+    DataArrayTooLongError { data_length: usize },
+    #[error("Animation byte count exceeds u32 max: ({byte_count:?})")]
+    AnimationDataTooLargeError { byte_count: usize },
 }
 
 mod anm_bone;
