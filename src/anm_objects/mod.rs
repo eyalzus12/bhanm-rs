@@ -43,6 +43,8 @@ pub enum AnmWritingError {
     TooLongClassFilename { filename_length: usize },
     #[error("Animation count exceeds u32 max: ({animation_count:?})")]
     TooManyAnimationsError { animation_count: usize },
+    #[error("Class key length exceeds u16 max: ({key_length:?})")]
+    TooLongClassKey { key_length: usize },
 }
 
 mod anm_bone;

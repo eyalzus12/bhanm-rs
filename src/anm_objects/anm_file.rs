@@ -1,7 +1,10 @@
-use super::{AnmClass, AnmReadingError};
-use byteorder::{LittleEndian as LE, ReadBytesExt};
-use flate2::read::ZlibDecoder;
-use std::{collections::HashMap, io::Read};
+use super::{AnmClass, AnmReadingError, AnmWritingError};
+use byteorder::{LittleEndian as LE, ReadBytesExt, WriteBytesExt};
+use flate2::{Compression, read::ZlibDecoder, write::ZlibEncoder};
+use std::{
+    collections::HashMap,
+    io::{Read, Write},
+};
 
 type ClassesCollection = HashMap<String, AnmClass>;
 
@@ -20,6 +23,14 @@ impl AnmFile {
         })
     }
 
+    pub fn write<W: Write>(&self, mut writer: W) -> Result<(), AnmWritingError> {
+        writer.write_i32::<LE>(self.header)?;
+        let zlib = ZlibEncoder::new(writer, Compression::best());
+        self.write_classes(zlib)?;
+
+        Ok(())
+    }
+
     fn read_classes<R: Read>(mut reader: R) -> Result<ClassesCollection, AnmReadingError> {
         let mut classes = ClassesCollection::new();
         while reader.read_u8()? != 0 {
@@ -32,5 +43,23 @@ impl AnmFile {
         }
 
         Ok(classes)
+    }
+
+    fn write_classes<W: Write>(&self, mut writer: W) -> Result<(), AnmWritingError> {
+        for (key, class) in self.classes.iter() {
+            let key_length = key.len();
+            let key_length = match key_length.try_into() {
+                Ok(v) => v,
+                Err(_) => return Err(AnmWritingError::TooLongClassKey { key_length }),
+            };
+
+            writer.write_u8(1)?;
+            writer.write_u16::<LE>(key_length)?;
+            writer.write_all(key.as_bytes())?;
+            class.write(&mut writer)?;
+        }
+        writer.write_u8(0)?;
+
+        Ok(())
     }
 }
